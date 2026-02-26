@@ -1,0 +1,1198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Design Thinking Simulator</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=DM+Mono:wght@400;500&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  background: #ffffff;
+  color: #0a0a0a;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px;
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+/* ─── PAGES ─── */
+.page { display: none; min-height: 100vh; background: #ffffff; }
+.page.active { display: flex; flex-direction: column; animation: fadeIn 0.3s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+/* ─── NAV ─── */
+nav {
+  background: #ffffff;
+  border-bottom: 1.5px solid #0a0a0a;
+  padding: 18px 48px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.nav-logo {
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #0a0a0a;
+  cursor: pointer;
+}
+.nav-right { display: flex; align-items: center; gap: 24px; }
+.nav-score { font-family: 'DM Mono', monospace; font-size: 12px; color: #777; }
+.nav-score span { color: #0a0a0a; font-weight: 600; }
+.back-btn {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: none;
+  border: 1.5px solid #0a0a0a;
+  padding: 7px 16px;
+  cursor: pointer;
+  color: #0a0a0a;
+  transition: all 0.15s;
+}
+.back-btn:hover { background: #0a0a0a; color: #ffffff; }
+
+/* ─── CONTENT ─── */
+.content { flex: 1; padding: 60px 48px; max-width: 900px; margin: 0 auto; width: 100%; }
+
+/* ─── HOME ─── */
+.home-header { margin-bottom: 52px; }
+.home-header h1 { font-size: 54px; font-weight: 600; letter-spacing: -0.03em; line-height: 1.07; margin-bottom: 20px; }
+.home-header p { font-size: 17px; color: #555; max-width: 500px; line-height: 1.65; }
+
+.progress-strip {
+  display: flex;
+  border: 1.5px solid #0a0a0a;
+  margin-bottom: 44px;
+}
+.ps { flex: 1; padding: 14px 18px; border-right: 1.5px solid #0a0a0a; text-align: center; }
+.ps:last-child { border-right: none; }
+.ps .ps-n { font-family: 'DM Mono', monospace; font-size: 20px; font-weight: 500; display: block; }
+.ps .ps-l { font-size: 11px; color: #888; margin-top: 2px; text-transform: uppercase; letter-spacing: 0.05em; }
+
+/* ─── MODULE GRID ─── */
+.module-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 1.5px;
+  background: #0a0a0a;
+  border: 1.5px solid #0a0a0a;
+}
+.mc {
+  background: #ffffff;
+  padding: 32px 28px;
+  cursor: pointer;
+  transition: background 0.18s;
+  position: relative;
+  min-height: 180px;
+}
+.mc:hover { background: #f5f5f5; }
+.mc.done-card { background: #0a0a0a; color: #ffffff; cursor: default; }
+.mc.locked-card { opacity: 0.38; cursor: not-allowed; }
+.mc-num {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  color: #aaa;
+  margin-bottom: 10px;
+  text-transform: uppercase;
+}
+.mc.done-card .mc-num { color: #666; }
+.mc-title { font-size: 18px; font-weight: 600; letter-spacing: -0.01em; margin-bottom: 7px; }
+.mc-desc { font-size: 13px; color: #777; line-height: 1.5; }
+.mc.done-card .mc-desc { color: #888; }
+.mc-badge {
+  position: absolute;
+  top: 18px; right: 20px;
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.07em;
+  padding: 3px 9px;
+  border: 1px solid;
+}
+.badge-new { background: #0a0a0a; color: #fff; border-color: #0a0a0a; }
+.badge-done { border-color: #666; color: #777; }
+.badge-lock { border-color: #ccc; color: #ccc; }
+
+/* ─── MODULE PAGE ─── */
+.eyebrow { font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: #999; margin-bottom: 10px; }
+.mod-title { font-size: 42px; font-weight: 600; letter-spacing: -0.025em; line-height: 1.08; margin-bottom: 18px; }
+.mod-desc { font-size: 16px; color: #444; max-width: 580px; margin-bottom: 40px; line-height: 1.65; }
+
+/* SCENARIO */
+.scenario {
+  border: 1.5px solid #0a0a0a;
+  padding: 26px 30px;
+  margin-bottom: 32px;
+  position: relative;
+}
+.scenario::before {
+  content: attr(data-lbl);
+  position: absolute;
+  top: -1px; left: -1px;
+  background: #0a0a0a;
+  color: #fff;
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 4px 12px;
+}
+.scenario h3 { font-size: 17px; font-weight: 600; margin: 12px 0 8px; }
+.scenario p { color: #444; font-size: 14px; line-height: 1.6; margin: 0; }
+
+/* Q LABEL */
+.qlabel { font-size: 16px; font-weight: 500; margin-bottom: 14px; color: #0a0a0a; }
+
+/* OPTIONS */
+.opts { display: flex; flex-direction: column; gap: 10px; }
+.opt {
+  background: #ffffff;
+  border: 1.5px solid #ddd;
+  padding: 15px 18px;
+  text-align: left;
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  color: #0a0a0a;
+  line-height: 1.55;
+  transition: border-color 0.15s, background 0.15s;
+}
+.opt:hover:not(:disabled) { border-color: #0a0a0a; background: #fafafa; }
+.opt .ok { font-family: 'DM Mono', monospace; font-size: 11px; color: #bbb; margin-right: 10px; }
+.opt.c-right { border-color: #0a0a0a; background: #0a0a0a; color: #fff; }
+.opt.c-right .ok { color: #777; }
+.opt.c-wrong { border-color: #e5e5e5; background: #f9f9f9; color: #bbb; text-decoration: line-through; }
+
+/* FEEDBACK */
+.fb {
+  margin-top: 18px;
+  border: 1.5px solid #0a0a0a;
+  padding: 18px 22px;
+  background: #f8f8f8;
+  display: none;
+}
+.fb.show { display: block; animation: fadeIn 0.28s ease; }
+.fb-v { font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 7px; }
+.fb-v.ok { color: #0a0a0a; }
+.fb-v.no { color: #aaa; }
+.fb p { font-size: 14px; color: #333; line-height: 1.6; }
+
+/* STICKY */
+.sticky-board {
+  border: 1.5px dashed #ccc;
+  padding: 14px;
+  min-height: 90px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 10px 0 20px;
+  background: #fafafa;
+}
+.sticky-note {
+  background: #fff;
+  border: 1px solid #ddd;
+  padding: 9px 12px;
+  font-size: 13px;
+  max-width: 200px;
+  position: relative;
+  line-height: 1.4;
+}
+.sticky-note .x { position: absolute; top: 4px; right: 7px; cursor: pointer; font-size: 12px; color: #bbb; }
+.hint-empty { font-size: 13px; color: #ccc; width: 100%; display: flex; align-items: center; }
+
+/* TOOL GRID */
+.tool-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+.tc {
+  border: 1.5px solid #ddd;
+  padding: 20px;
+  cursor: pointer;
+  transition: border-color 0.15s;
+  background: #ffffff;
+}
+.tc:hover { border-color: #0a0a0a; }
+.tc.picked { border-color: #0a0a0a; background: #f6f6f6; }
+.tc h4 { font-size: 14px; font-weight: 600; margin-bottom: 5px; }
+.tc p { font-size: 13px; color: #888; margin: 0; line-height: 1.4; }
+
+/* TAGS */
+.tag-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+.ins-tag {
+  background: #0a0a0a;
+  color: #fff;
+  font-size: 12px;
+  font-family: 'DM Mono', monospace;
+  padding: 5px 12px;
+  cursor: pointer;
+  transition: opacity 0.2s;
+  letter-spacing: 0.03em;
+}
+.ins-tag.off { background: #e8e8e8; color: #bbb; text-decoration: line-through; }
+
+/* FIELD */
+.flbl { font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: #888; display: block; margin-bottom: 7px; }
+textarea, input[type=text] {
+  width: 100%;
+  border: 1.5px solid #ddd;
+  padding: 12px 16px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  color: #0a0a0a;
+  background: #ffffff;
+  outline: none;
+  transition: border-color 0.15s;
+  resize: vertical;
+  line-height: 1.6;
+}
+textarea:focus, input[type=text]:focus { border-color: #0a0a0a; }
+
+/* BUTTONS */
+.btn {
+  display: inline-block;
+  background: #0a0a0a;
+  color: #fff;
+  border: none;
+  padding: 13px 30px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  margin-top: 22px;
+  letter-spacing: 0.02em;
+  transition: opacity 0.15s;
+}
+.btn:hover { opacity: 0.8; }
+.btn-o {
+  display: inline-block;
+  background: transparent;
+  color: #0a0a0a;
+  border: 1.5px solid #0a0a0a;
+  padding: 11px 26px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  margin-top: 22px;
+  margin-left: 12px;
+  letter-spacing: 0.02em;
+  transition: all 0.15s;
+}
+.btn-o:hover { background: #0a0a0a; color: #fff; }
+.idea-row { display: flex; gap: 8px; margin-bottom: 12px; }
+
+hr { border: none; border-top: 1px solid #ebebeb; margin: 34px 0; }
+
+/* RESULTS */
+.res-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; margin: 28px 0; }
+.res-cell { border: 1.5px solid #ddd; padding: 22px 18px; text-align: center; }
+.res-cell .rn { font-size: 42px; font-weight: 600; letter-spacing: -0.03em; }
+.res-cell .rl { font-size: 11px; color: #888; font-family: 'DM Mono', monospace; margin-top: 4px; text-transform: uppercase; letter-spacing: 0.05em; }
+.badge-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 26px; }
+.bdg { border: 1.5px solid #0a0a0a; padding: 7px 16px; font-size: 13px; font-weight: 500; }
+.lesson { border-left: 2px solid #0a0a0a; padding: 10px 16px; margin-bottom: 10px; }
+.lesson strong { color: #0a0a0a; }
+.lesson em { font-style: normal; font-size: 14px; color: #444; }
+
+/* ─── LEARN INTRO ─── */
+.learn-intro { display: none; }
+.learn-intro.active { display: block; }
+.challenge-section { display: none; }
+.challenge-section.active { display: block; }
+
+.learn-banner {
+  border: 1.5px solid #0a0a0a;
+  padding: 0;
+  margin-bottom: 36px;
+  overflow: hidden;
+}
+.learn-banner-header {
+  background: #0a0a0a;
+  color: #fff;
+  padding: 14px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.learn-banner-header .lbh-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.learn-banner-header .lbh-tag {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border: 1px solid #555;
+  padding: 3px 9px;
+  color: #aaa;
+}
+.learn-banner-body { padding: 28px 28px 24px; }
+.learn-banner-body p { font-size: 15px; color: #333; line-height: 1.7; margin-bottom: 24px; max-width: 620px; }
+
+.learn-principles {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;
+  background: #ddd;
+  border: 1px solid #ddd;
+  margin-bottom: 24px;
+}
+.lp {
+  background: #fff;
+  padding: 16px 18px;
+}
+.lp .lp-icon { font-size: 18px; margin-bottom: 6px; }
+.lp .lp-title { font-size: 13px; font-weight: 600; margin-bottom: 4px; color: #0a0a0a; }
+.lp .lp-text { font-size: 13px; color: #666; line-height: 1.5; }
+
+.learn-quote {
+  border-left: 3px solid #0a0a0a;
+  padding: 12px 18px;
+  margin-bottom: 24px;
+  background: #fafafa;
+}
+.learn-quote p { font-size: 15px; font-style: italic; color: #333; margin: 0; line-height: 1.6; }
+.learn-quote cite { font-size: 12px; color: #888; font-style: normal; font-family: 'DM Mono', monospace; display: block; margin-top: 6px; }
+
+.learn-tip {
+  background: #f5f5f5;
+  border: 1px solid #e0e0e0;
+  padding: 14px 18px;
+  margin-bottom: 8px;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+.learn-tip .lt-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+.learn-tip .lt-text { font-size: 13px; color: #444; line-height: 1.55; }
+.learn-tip .lt-text strong { color: #0a0a0a; }
+
+.ready-btn {
+  display: inline-block;
+  background: #0a0a0a;
+  color: #fff;
+  border: none;
+  padding: 14px 32px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  margin-top: 8px;
+  letter-spacing: 0.02em;
+  transition: opacity 0.15s;
+}
+.ready-btn:hover { opacity: 0.8; }
+
+@media (max-width: 640px) {
+  nav { padding: 16px 20px; }
+  .content { padding: 36px 20px; }
+  .home-header h1 { font-size: 36px; }
+  .module-grid { grid-template-columns: 1fr; }
+  .tool-grid { grid-template-columns: 1fr; }
+  .res-grid { grid-template-columns: 1fr 1fr; }
+  .progress-strip { flex-wrap: wrap; }
+  .learn-principles { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════ HOME ═══════════════ -->
+<div class="page active" id="page-home">
+  <nav>
+    <div class="nav-logo" onclick="goHome()">Design Thinking Simulator</div>
+    <div class="nav-right">
+      <div class="nav-score">Score <span id="s-home">0</span></div>
+    </div>
+  </nav>
+  <div class="content">
+    <div class="home-header">
+      <h1>Master Design<br>Thinking</h1>
+      <p>Navigate all 5 phases of the Stanford Design Thinking process through real-world scenarios. Click any unlocked module to begin.</p>
+    </div>
+
+    <div class="progress-strip">
+      <div class="ps"><span class="ps-n" id="ps-pts">0</span><div class="ps-l">Points</div></div>
+      <div class="ps"><span class="ps-n" id="ps-cor">0/5</span><div class="ps-l">Correct</div></div>
+      <div class="ps"><span class="ps-n" id="ps-str">0</span><div class="ps-l">Streak</div></div>
+      <div class="ps"><span class="ps-n" id="ps-don">0/5</span><div class="ps-l">Done</div></div>
+    </div>
+
+    <div class="module-grid">
+      <div class="mc" id="card-empathize" onclick="openMod('empathize')">
+        <div class="mc-num">Phase 01</div>
+        <div class="mc-title">Empathize</div>
+        <div class="mc-desc">Observe users deeply. Uncover what they can't articulate.</div>
+        <div class="mc-badge badge-new" id="tag-empathize">START</div>
+      </div>
+      <div class="mc locked-card" id="card-define" onclick="openMod('define')">
+        <div class="mc-num">Phase 02</div>
+        <div class="mc-title">Define</div>
+        <div class="mc-desc">Reframe findings into a sharp human-centered problem statement.</div>
+        <div class="mc-badge badge-lock" id="tag-define">LOCKED</div>
+      </div>
+      <div class="mc locked-card" id="card-ideate" onclick="openMod('ideate')">
+        <div class="mc-num">Phase 03</div>
+        <div class="mc-title">Ideate</div>
+        <div class="mc-desc">Generate bold ideas without judgment. Quantity drives breakthroughs.</div>
+        <div class="mc-badge badge-lock" id="tag-ideate">LOCKED</div>
+      </div>
+      <div class="mc locked-card" id="card-prototype" onclick="openMod('prototype')">
+        <div class="mc-num">Phase 04</div>
+        <div class="mc-title">Prototype</div>
+        <div class="mc-desc">Build cheap and fast. Learn before you invest.</div>
+        <div class="mc-badge badge-lock" id="tag-prototype">LOCKED</div>
+      </div>
+      <div class="mc locked-card" id="card-test" onclick="openMod('test')">
+        <div class="mc-num">Phase 05</div>
+        <div class="mc-title">Test</div>
+        <div class="mc-desc">Watch users. Stay silent. Iterate on every insight.</div>
+        <div class="mc-badge badge-lock" id="tag-test">LOCKED</div>
+      </div>
+      <div class="mc locked-card" id="card-results" onclick="openMod('results')">
+        <div class="mc-num">Final</div>
+        <div class="mc-title">Your Results</div>
+        <div class="mc-desc">Grade, badges and personalised lessons from each phase.</div>
+        <div class="mc-badge badge-lock" id="tag-results">LOCKED</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ EMPATHIZE ═══════════════ -->
+<div class="page" id="page-empathize">
+  <nav>
+    <div class="nav-logo" onclick="goHome()">Design Thinking Simulator</div>
+    <div class="nav-right">
+      <div class="nav-score">Score <span id="s-em">0</span></div>
+      <button class="back-btn" onclick="goHome()">← Home</button>
+    </div>
+  </nav>
+  <div class="content">
+
+    <!-- LEARN INTRO -->
+    <div class="learn-intro active" id="learn-empathize">
+      <div class="eyebrow">Phase 01 — Empathize</div>
+      <h1 class="mod-title">Understand Your Users</h1>
+      <p class="mod-desc">Before you design anything, you need to deeply understand the people you're designing for — their needs, frustrations, and the context of their lives.</p>
+
+      <div class="learn-banner">
+        <div class="learn-banner-header">
+          <span class="lbh-label">What is Empathy in Design?</span>
+          <span class="lbh-tag">Core Concept</span>
+        </div>
+        <div class="learn-banner-body">
+          <p>Empathy is the foundation of human-centered design. It means setting aside your own assumptions and genuinely trying to understand the world through your user's eyes — their emotions, motivations, and real behaviours, not just what they say they do.</p>
+          <div class="learn-principles">
+            <div class="lp">
+              <div class="lp-icon">👁</div>
+              <div class="lp-title">Observe</div>
+              <div class="lp-text">Watch users in their natural environment without interfering. Behaviour reveals what words often hide.</div>
+            </div>
+            <div class="lp">
+              <div class="lp-icon">🎙</div>
+              <div class="lp-title">Engage</div>
+              <div class="lp-text">Ask open-ended "why" questions. Listen more than you speak. Let silences breathe.</div>
+            </div>
+            <div class="lp">
+              <div class="lp-icon">🔄</div>
+              <div class="lp-title">Immerse</div>
+              <div class="lp-text">Experience the problem yourself if possible. Walk the same path your users walk.</div>
+            </div>
+            <div class="lp">
+              <div class="lp-icon">🚫</div>
+              <div class="lp-title">Suspend Judgment</div>
+              <div class="lp-text">Resist the urge to solve. Your only job at this stage is to understand, not fix.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="learn-quote">
+        <p>"You can't innovate for people you don't understand."</p>
+        <cite>— IDEO Design Thinking Principle</cite>
+      </div>
+
+      <div class="learn-tip">
+        <div class="lt-icon">⚠️</div>
+        <div class="lt-text"><strong>Common mistake:</strong> Jumping straight to surveys. Surveys tell you what people think they feel — not what they actually do. The gap between the two is where design insight lives.</div>
+      </div>
+      <div class="learn-tip">
+        <div class="lt-icon">✅</div>
+        <div class="lt-text"><strong>Best practice:</strong> Shadowing (following someone through their experience) is one of the most powerful empathy tools. It surfaces invisible pain points the user has learned to accept.</div>
+      </div>
+
+      <button class="ready-btn" onclick="startChallenge('empathize')">I'm Ready — Start the Challenge →</button>
+    </div>
+
+    <!-- CHALLENGE SECTION -->
+    <div class="challenge-section" id="challenge-empathize">
+      <div class="eyebrow">Phase 01 — Empathize · Challenge</div>
+      <h1 class="mod-title">Apply Your Knowledge</h1>
+
+      <div class="scenario" data-lbl="Scenario">
+        <h3>The Hospital Wayfinding Problem</h3>
+        <p>A large urban hospital has hired you. Patients are frequently late to appointments, stressed, and getting lost. The admin team wants a new digital map app. Your job: figure out what's actually happening before proposing any solution.</p>
+      </div>
+
+      <div class="qlabel">You have 2 hours before presenting to the hospital director. Which approach do you take?</div>
+      <div class="opts" id="opts-empathize">
+        <button class="opt" onclick="answer('empathize',0,this)"><span class="ok">A</span>Conduct 5-minute surveys at the entrance about how patients feel about maps</button>
+        <button class="opt" onclick="answer('empathize',1,this)"><span class="ok">B</span>Shadow 3 patients from arrival to appointment — observe without interfering, note every hesitation and detour</button>
+        <button class="opt" onclick="answer('empathize',2,this)"><span class="ok">C</span>Interview the head nurse about what staff think patients struggle with</button>
+        <button class="opt" onclick="answer('empathize',3,this)"><span class="ok">D</span>Review complaint emails from the past year and build a frequency chart</button>
+      </div>
+      <div class="fb" id="fb-empathize"><div class="fb-v" id="fv-empathize"></div><p id="fm-empathize"></p></div>
+      <button class="btn" id="next-empathize" style="display:none" onclick="complete('empathize','define')">Continue to Define →</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════ DEFINE ═══════════════ -->
+<div class="page" id="page-define">
+  <nav>
+    <div class="nav-logo" onclick="goHome()">Design Thinking Simulator</div>
+    <div class="nav-right">
+      <div class="nav-score">Score <span id="s-de">0</span></div>
+      <button class="back-btn" onclick="goHome()">← Home</button>
+    </div>
+  </nav>
+  <div class="content">
+
+    <!-- LEARN INTRO -->
+    <div class="learn-intro active" id="learn-define">
+      <div class="eyebrow">Phase 02 — Define</div>
+      <h1 class="mod-title">Frame the Problem</h1>
+      <p class="mod-desc">Empathy gives you raw material. Defining transforms that material into a sharp, actionable problem statement — your north star for everything that follows.</p>
+
+      <div class="learn-banner">
+        <div class="learn-banner-header">
+          <span class="lbh-label">What is a Point of View (POV)?</span>
+          <span class="lbh-tag">Core Concept</span>
+        </div>
+        <div class="learn-banner-body">
+          <p>A Point of View statement is a human-centered problem definition. It captures who your user is, what they need, and the insight that explains why that need matters. It's not a solution — it's a reframing that opens up creative possibilities.</p>
+          <div class="learn-principles">
+            <div class="lp">
+              <div class="lp-icon">🧑</div>
+              <div class="lp-title">Name the User</div>
+              <div class="lp-text">Be specific. "A first-time hospital visitor" is better than "people." Specificity creates empathy.</div>
+            </div>
+            <div class="lp">
+              <div class="lp-icon">🎯</div>
+              <div class="lp-title">State the Need</div>
+              <div class="lp-text">Express a need, not a feature. "Navigate with confidence" not "have a better map."</div>
+            </div>
+            <div class="lp">
+              <div class="lp-icon">💡</div>
+              <div class="lp-title">Add the Insight</div>
+              <div class="lp-text">The surprising "because" — the root cause that makes the need feel urgent and human.</div>
+            </div>
+            <div class="lp">
+              <div class="lp-icon">🔍</div>
+              <div class="lp-title">Synthesise Patterns</div>
+              <div class="lp-text">Look across all your observations. What themes keep appearing? What surprised you most?</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="learn-quote">
+        <p>"If I had an hour to solve a problem, I'd spend 55 minutes thinking about the problem and 5 minutes thinking about solutions."</p>
+        <cite>— Often attributed to Albert Einstein</cite>
+      </div>
+
+      <div class="learn-tip">
+        <div class="lt-icon">⚠️</div>
+        <div class="lt-text"><strong>Common mistake:</strong> Writing a solution-focused problem statement. "We need a better app" is not a problem definition — it's already a solution. Stay in the problem space.</div>
+      </div>
+      <div class="learn-tip">
+        <div class="lt-icon">✅</div>
+        <div class="lt-text"><strong>Formula to remember:</strong> <strong>[User]</strong> needs a way to <strong>[need]</strong> because <strong>[insight]</strong>. The insight is the most important part — it's what makes the problem feel real and urgent.</div>
+      </div>
+
+      <button class="ready-btn" onclick="startChallenge('define')">I'm Ready — Start the Challenge →</button>
+    </div>
+
+    <!-- CHALLENGE -->
+    <div class="challenge-section" id="challenge-define">
+      <div class="eyebrow">Phase 02 — Define · Challenge</div>
+      <h1 class="mod-title">Apply Your Knowledge</h1>
+
+      <div class="scenario" data-lbl="Your Observations">
+        <h3>What You Found While Shadowing</h3>
+        <p>Here are the raw insights from your 2-hour observation session. Click any tag to remove it — keep only what's most relevant to the core problem.</p>
+      </div>
+
+      <div class="tag-row" id="ins-tags">
+        <span class="ins-tag" onclick="this.classList.toggle('off')">Patients feel anxious on arrival</span>
+        <span class="ins-tag" onclick="this.classList.toggle('off')">Signs use medical dept. names not patient-language</span>
+        <span class="ins-tag" onclick="this.classList.toggle('off')">Elevators are hard to find from the main entrance</span>
+        <span class="ins-tag" onclick="this.classList.toggle('off')">Cafeteria is a popular landmark people use to orient</span>
+        <span class="ins-tag" onclick="this.classList.toggle('off')">Elderly patients stop to ask staff 3× more than others</span>
+        <span class="ins-tag" onclick="this.classList.toggle('off')">Building has 4 wings built in different decades</span>
+      </div>
+
+      <div style="margin-bottom:26px">
+        <label class="flbl">Draft your own POV statement (optional)</label>
+        <p style="font-size:13px;color:#999;margin-bottom:8px">Format: [User] needs [need] because [insight]</p>
+        <textarea id="pov" rows="3" placeholder="e.g. A first-time patient needs to find their appointment room calmly because unfamiliar medical jargon on signs creates confusion and anxiety…"></textarea>
+      </div>
+
+      <div class="qlabel">Which POV statement best captures the core problem?</div>
+      <div class="opts" id="opts-define">
+        <button class="opt" onclick="answer('define',0,this)"><span class="ok">A</span>"The hospital needs better maps because the current ones are confusing."</button>
+        <button class="opt" onclick="answer('define',1,this)"><span class="ok">B</span>"A stressed first-time visitor needs to navigate confidently because unfamiliar medical jargon on signs makes them feel lost and late."</button>
+        <button class="opt" onclick="answer('define',2,this)"><span class="ok">C</span>"Elderly patients need staff assistance because they can't read small text on wall maps."</button>
+      </div>
+      <div class="fb" id="fb-define"><div class="fb-v" id="fv-define"></div><p id="fm-define"></p></div>
+      <button class="btn" id="next-define" style="display:none" onclick="complete('define','ideate')">Continue to Ideate →</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════ IDEATE ═══════════════ -->
+<div class="page" id="page-ideate">
+  <nav>
+    <div class="nav-logo" onclick="goHome()">Design Thinking Simulator</div>
+    <div class="nav-right">
+      <div class="nav-score">Score <span id="s-id">0</span></div>
+      <button class="back-btn" onclick="goHome()">← Home</button>
+    </div>
+  </nav>
+  <div class="content">
+
+    <!-- LEARN INTRO -->
+    <div class="learn-intro active" id="learn-ideate">
+      <div class="eyebrow">Phase 03 — Ideate</div>
+      <h1 class="mod-title">Generate Bold Ideas</h1>
+      <p class="mod-desc">Ideation is a creative explosion. The rules are different here — volume beats quality, wild beats safe, and judgment is strictly forbidden.</p>
+
+      <div class="learn-banner">
+        <div class="learn-banner-header">
+          <span class="lbh-label">The Art of Divergent Thinking</span>
+          <span class="lbh-tag">Core Concept</span>
+        </div>
+        <div class="learn-banner-body">
+          <p>Most people try to find the right answer immediately. Design thinkers do the opposite — they deliberately generate many imperfect answers first. This divergent phase is followed by convergence (picking the best ideas), but you can't converge well without first expanding the possibility space.</p>
+          <div class="learn-principles">
+            <div class="lp">
+              <div class="lp-icon">🚀</div>
+              <div class="lp-title">Defer Judgment</div>
+              <div class="lp-text">No critiquing during brainstorming. "Yes, and…" not "No, because…". Every idea is valid right now.</div>
+            </div>
+            <div class="lp">
+              <div class="lp-icon">📊</div>
+              <div class="lp-title">Go for Volume</div>
+              <div class="lp-text">Aim for 20+ ideas before filtering. Research shows that breakthrough ideas typically appear later in a session.</div>
+            </div>
+            <div class="lp">
+              <div class="lp-icon">🌀</div>
+              <div class="lp-title">How Might We</div>
+              <div class="lp-text">Reframe problems as opportunities. "How might we make navigation feel like a game?" opens more doors than "Fix the signs."</div>
+            </div>
+            <div class="lp">
+              <div class="lp-icon">🤝</div>
+              <div class="lp-title">Build on Others</div>
+              <div class="lp-text">Use others' ideas as springboards. "Yes, and…" compounding turns one idea into ten.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="learn-quote">
+        <p>"The best way to have a good idea is to have lots of ideas."</p>
+        <cite>— Linus Pauling, Nobel Prize winner</cite>
+      </div>
+
+      <div class="learn-tip">
+        <div class="lt-icon">⚠️</div>
+        <div class="lt-text"><strong>Common mistake:</strong> Converging too soon. Teams often jump to refining one idea before exploring the full solution space. The most obvious first idea is rarely the best one.</div>
+      </div>
+      <div class="learn-tip">
+        <div class="lt-icon">✅</div>
+        <div class="lt-text"><strong>Technique:</strong> Try "Crazy 8s" — sketch 8 wildly different ideas in 8 minutes. Speed forces your brain past the obvious and into the unexpected.</div>
+      </div>
+
+      <button class="ready-btn" onclick="startChallenge('ideate')">I'm Ready — Start the Challenge →</button>
+    </div>
+
+    <!-- CHALLENGE -->
+    <div class="challenge-section" id="challenge-ideate">
+      <div class="eyebrow">Phase 03 — Ideate · Challenge</div>
+      <h1 class="mod-title">Apply Your Knowledge</h1>
+
+      <label class="flbl">Brain Dump — add at least 4 ideas</label>
+      <div class="idea-row">
+        <input type="text" id="idea-inp" placeholder="Type an idea and press Enter…" onkeydown="if(event.key==='Enter')addIdea()" />
+        <button class="btn" style="margin:0;padding:12px 20px;white-space:nowrap" onclick="addIdea()">+ Add</button>
+      </div>
+
+      <div class="sticky-board" id="idea-board">
+        <div class="hint-empty" id="idea-hint">Your ideas will appear here as sticky notes…</div>
+      </div>
+
+      <div id="ideate-q" style="display:none">
+        <hr>
+        <div class="qlabel">A teammate asks: "Should we evaluate ideas as we generate them?" What do you say?</div>
+        <div class="opts" id="opts-ideate">
+          <button class="opt" onclick="answer('ideate',0,this)"><span class="ok">A</span>Yes — filter out weak ideas immediately so you only develop strong ones</button>
+          <button class="opt" onclick="answer('ideate',1,this)"><span class="ok">B</span>No — defer judgment completely. Use "How Might We" reframes and build on every idea before filtering anything</button>
+          <button class="opt" onclick="answer('ideate',2,this)"><span class="ok">C</span>Only the team lead should evaluate — everyone else keeps generating</button>
+        </div>
+        <div class="fb" id="fb-ideate"><div class="fb-v" id="fv-ideate"></div><p id="fm-ideate"></p></div>
+      </div>
+
+      <button class="btn" id="next-ideate" style="display:none" onclick="complete('ideate','prototype')">Continue to Prototype →</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════ PROTOTYPE ═══════════════ -->
+<div class="page" id="page-prototype">
+  <nav>
+    <div class="nav-logo" onclick="goHome()">Design Thinking Simulator</div>
+    <div class="nav-right">
+      <div class="nav-score">Score <span id="s-pr">0</span></div>
+      <button class="back-btn" onclick="goHome()">← Home</button>
+    </div>
+  </nav>
+  <div class="content">
+
+    <!-- LEARN INTRO -->
+    <div class="learn-intro active" id="learn-prototype">
+      <div class="eyebrow">Phase 04 — Prototype</div>
+      <h1 class="mod-title">Build to Learn</h1>
+      <p class="mod-desc">A prototype is not a finished product — it's a question with a physical form. You build it to learn, not to launch.</p>
+
+      <div class="learn-banner">
+        <div class="learn-banner-header">
+          <span class="lbh-label">Why Prototype Early and Often?</span>
+          <span class="lbh-tag">Core Concept</span>
+        </div>
+        <div class="learn-banner-body">
+          <p>Prototyping is about making ideas tangible so you can test your assumptions quickly and cheaply. The faster you put something in front of users, the faster you learn what works — and what doesn't. The goal is never polish; it's insight.</p>
+          <div class="learn-principles">
+            <div class="lp">
+              <div class="lp-icon">📄</div>
+              <div class="lp-title">Start Low-Fidelity</div>
+              <div class="lp-text">Paper, cardboard, sticky notes. Low-fidelity means faster iteration and users focus on the concept, not the aesthetics.</div>
+            </div>
+            <div class="lp">
+              <div class="lp-icon">❓</div>
+              <div class="lp-title">Prototype One Thing</div>
+              <div class="lp-text">Each prototype should answer one key question. Don't build everything — build the part you're most uncertain about.</div>
+            </div>
+            <div class="lp">
+              <div class="lp-icon">💸</div>
+              <div class="lp-title">Fail Cheap</div>
+              <div class="lp-text">A failed paper prototype costs 2 hours. A failed polished app costs months. Front-load your failures.</div>
+            </div>
+            <div class="lp">
+              <div class="lp-icon">🔁</div>
+              <div class="lp-title">Iterate Fast</div>
+              <div class="lp-text">Build → Test → Learn → Build again. Each cycle makes your understanding sharper.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="learn-quote">
+        <p>"Build to think, not think to build."</p>
+        <cite>— Tom Kelley, IDEO</cite>
+      </div>
+
+      <div class="learn-tip">
+        <div class="lt-icon">⚠️</div>
+        <div class="lt-text"><strong>Common mistake:</strong> Falling in love with your prototype. When you've spent days building something, you stop seeing its flaws. Emotional attachment is the enemy of objective learning.</div>
+      </div>
+      <div class="learn-tip">
+        <div class="lt-icon">✅</div>
+        <div class="lt-text"><strong>Types of prototypes:</strong> Paper sketches, storyboards, clickable wireframes, role-playing, physical models, and "Wizard of Oz" simulations (a human manually mimics a system). Choose the method that answers your key question fastest.</div>
+      </div>
+
+      <button class="ready-btn" onclick="startChallenge('prototype')">I'm Ready — Start the Challenge →</button>
+    </div>
+
+    <!-- CHALLENGE -->
+    <div class="challenge-section" id="challenge-prototype">
+      <div class="eyebrow">Phase 04 — Prototype · Challenge</div>
+      <h1 class="mod-title">Apply Your Knowledge</h1>
+
+      <div class="scenario" data-lbl="Context">
+        <h3>User test session in 3 days</h3>
+        <p>Your team has narrowed down to two wayfinding concepts. Resources are limited. Click a prototyping method below, then answer the follow-up question.</p>
+      </div>
+
+      <div class="qlabel">Which prototyping approach do you choose?</div>
+      <div class="tool-grid">
+        <div class="tc" onclick="pickTool(this,'paper')"><h4>Paper Prototype</h4><p>Hand-drawn screens and flow. Takes 2 hours. Testable tomorrow.</p></div>
+        <div class="tc" onclick="pickTool(this,'hifi')"><h4>High-Fidelity Figma</h4><p>Polished pixel-perfect mockup. Takes 3 days. Looks impressive to stakeholders.</p></div>
+        <div class="tc" onclick="pickTool(this,'story')"><h4>Storyboard</h4><p>Visual narrative of the user journey. 4 hours. Communicates context well.</p></div>
+        <div class="tc" onclick="pickTool(this,'woz')"><h4>Wizard of Oz</h4><p>Staff simulate the system manually via earpiece. Zero build time needed.</p></div>
+      </div>
+
+      <div id="proto-q" style="display:none">
+        <div class="qlabel">Why is low-fidelity prototyping usually the right first move?</div>
+        <div class="opts" id="opts-prototype">
+          <button class="opt" onclick="answer('prototype',0,this)"><span class="ok">A</span>It impresses stakeholders and builds confidence in the team</button>
+          <button class="opt" onclick="answer('prototype',1,this)"><span class="ok">B</span>It lets you fail fast and cheaply — you learn before committing significant time or money to a build</button>
+          <button class="opt" onclick="answer('prototype',2,this)"><span class="ok">C</span>Low-fidelity is easier to hand off to developers than polished designs</button>
+        </div>
+        <div class="fb" id="fb-prototype"><div class="fb-v" id="fv-prototype"></div><p id="fm-prototype"></p></div>
+      </div>
+
+      <button class="btn" id="next-prototype" style="display:none" onclick="complete('prototype','test')">Continue to Test →</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════ TEST ═══════════════ -->
+<div class="page" id="page-test">
+  <nav>
+    <div class="nav-logo" onclick="goHome()">Design Thinking Simulator</div>
+    <div class="nav-right">
+      <div class="nav-score">Score <span id="s-te">0</span></div>
+      <button class="back-btn" onclick="goHome()">← Home</button>
+    </div>
+  </nav>
+  <div class="content">
+
+    <!-- LEARN INTRO -->
+    <div class="learn-intro active" id="learn-test">
+      <div class="eyebrow">Phase 05 — Test</div>
+      <h1 class="mod-title">Test &amp; Iterate</h1>
+      <p class="mod-desc">Testing is not a final exam — it's a continuous learning loop. Every session teaches you something that makes your next version better.</p>
+
+      <div class="learn-banner">
+        <div class="learn-banner-header">
+          <span class="lbh-label">How to Test Like a Design Thinker</span>
+          <span class="lbh-tag">Core Concept</span>
+        </div>
+        <div class="learn-banner-body">
+          <p>The goal of a test session is NOT to prove your design works. It's to discover how it fails. When users struggle, get confused, or take unexpected paths — those are your most valuable data points. Embrace failure; it's teaching you what to do next.</p>
+          <div class="learn-principles">
+            <div class="lp">
+              <div class="lp-icon">🤫</div>
+              <div class="lp-title">Stay Silent</div>
+              <div class="lp-text">Resist the urge to explain or help. When users struggle, let them. That struggle is your data.</div>
+            </div>
+            <div class="lp">
+              <div class="lp-icon">👀</div>
+              <div class="lp-title">Watch, Don't Ask</div>
+              <div class="lp-text">Observe what users do, not just what they say. Behaviour and reported behaviour often diverge sharply.</div>
+            </div>
+            <div class="lp">
+              <div class="lp-icon">📝</div>
+              <div class="lp-title">Capture Everything</div>
+              <div class="lp-text">Note hesitations, wrong turns, facial expressions, unexpected uses. The richest insight is often in the margins.</div>
+            </div>
+            <div class="lp">
+              <div class="lp-icon">🔄</div>
+              <div class="lp-title">Iterate, Don't Defend</div>
+              <div class="lp-text">When users fail, update the design — don't explain it better. If it needs explaining, it needs redesigning.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="learn-quote">
+        <p>"Testing is not about validation. It's about learning what you don't yet know."</p>
+        <cite>— Stanford d.school</cite>
+      </div>
+
+      <div class="learn-tip">
+        <div class="lt-icon">⚠️</div>
+        <div class="lt-text"><strong>Common mistake:</strong> Treating a partial success as a green light. If 2 out of 3 users succeed, you haven't learned why — or whether your solution will scale. The failures contain the real lesson.</div>
+      </div>
+      <div class="learn-tip">
+        <div class="lt-icon">✅</div>
+        <div class="lt-text"><strong>Key mindset:</strong> Test sessions are not about the prototype — they're about the user. When users behave unexpectedly, don't correct them. Follow their logic. It might reveal a better design than yours.</div>
+      </div>
+
+      <button class="ready-btn" onclick="startChallenge('test')">I'm Ready — Start the Challenge →</button>
+    </div>
+
+    <!-- CHALLENGE -->
+    <div class="challenge-section" id="challenge-test">
+      <div class="eyebrow">Phase 05 — Test · Challenge</div>
+      <h1 class="mod-title">Apply Your Knowledge</h1>
+
+      <div class="scenario" data-lbl="Test Session Results">
+        <h3>3 patients tested your paper prototype</h3>
+        <p><b>Patient 1</b> found the elevator in 90 seconds (vs 4 min before). <b>Patient 2</b> got confused at a color-coded junction — the color legend was too small. <b>Patient 3</b> ignored the floor plan entirely and loved the landmark directions ("turn left at the café") — those worked instantly.</p>
+      </div>
+
+      <div class="qlabel">What's the most design-thinking-aligned response to these results?</div>
+      <div class="opts" id="opts-test">
+        <button class="opt" onclick="answer('test',0,this)"><span class="ok">A</span>The prototype mostly worked (2/3 succeeded) — proceed to final development with minor polish</button>
+        <button class="opt" onclick="answer('test',1,this)"><span class="ok">B</span>Drop color-coding. Make landmark-only directions the primary navigation layer, then run another test round</button>
+        <button class="opt" onclick="answer('test',2,this)"><span class="ok">C</span>Fix the color legend font size and present the updated prototype to the director for sign-off</button>
+        <button class="opt" onclick="answer('test',3,this)"><span class="ok">D</span>Discard everything — go back to full empathy research with entirely different user groups</button>
+      </div>
+      <div class="fb" id="fb-test"><div class="fb-v" id="fv-test"></div><p id="fm-test"></p></div>
+      <button class="btn" id="next-test" style="display:none" onclick="complete('test','results')">See Your Results →</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════ RESULTS ═══════════════ -->
+<div class="page" id="page-results">
+  <nav>
+    <div class="nav-logo" onclick="goHome()">Design Thinking Simulator</div>
+    <div class="nav-right">
+      <button class="back-btn" onclick="goHome()">← Home</button>
+    </div>
+  </nav>
+  <div class="content">
+    <div class="eyebrow">Simulation Complete</div>
+    <h1 class="mod-title">Your Design Thinking Report</h1>
+
+    <div class="res-grid">
+      <div class="res-cell"><div class="rn" id="r-pts">0</div><div class="rl">Total Points</div></div>
+      <div class="res-cell"><div class="rn" id="r-cor">0/5</div><div class="rl">Correct</div></div>
+      <div class="res-cell"><div class="rn" id="r-grd">—</div><div class="rl">Grade</div></div>
+    </div>
+
+    <h2 style="font-size:18px;font-weight:600;margin-bottom:10px">Badges Earned</h2>
+    <div class="badge-row" id="r-badges"></div>
+
+    <hr>
+    <h2 style="font-size:18px;font-weight:600;margin-bottom:14px">Phase-by-Phase Feedback</h2>
+    <div id="r-lessons"></div>
+
+    <hr>
+    <button class="btn" onclick="restart()">Play Again</button>
+    <button class="btn-o" onclick="document.getElementById('cheat').style.display=document.getElementById('cheat').style.display==='none'?'block':'none'">Cheat Sheet</button>
+
+    <div id="cheat" style="display:none;margin-top:32px">
+      <h2 style="font-size:18px;font-weight:600;margin-bottom:14px">Design Thinking Cheat Sheet</h2>
+      <div class="lesson"><strong>Empathize: </strong><em>Observe first, ask later. Shadow real users. Avoid surveys that confirm your biases.</em></div>
+      <div class="lesson"><strong>Define: </strong><em>A great POV is human-centered, not solution-focused. Name the person, their need, and the insight behind it.</em></div>
+      <div class="lesson"><strong>Ideate: </strong><em>Defer judgment. Use "How Might We". Aim for 20+ ideas before filtering. Build on others.</em></div>
+      <div class="lesson"><strong>Prototype: </strong><em>Build rough, cheap, and fast. The goal is to learn — not to impress. Paper beats Figma in early rounds.</em></div>
+      <div class="lesson"><strong>Test: </strong><em>You're testing the prototype, not the user. Stay silent. Watch. Iterate relentlessly — one insight can reshape everything.</em></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── START CHALLENGE (show challenge, hide learn intro) ───
+function startChallenge(phase) {
+  document.getElementById('learn-' + phase).classList.remove('active');
+  document.getElementById('challenge-' + phase).classList.add('active');
+  window.scrollTo(0,0);
+}
+
+// ─── STATE ───
+let G = { score:0, streak:0, correct:0, done:[], answers:{}, ideas:[], tool:null };
+
+// ─── ANSWER DATA ───
+const ANS = {
+  empathize: { c:1, msgs:[
+    "Surveys capture what people say they feel, not what they actually experience. Self-report is unreliable — behaviour is truth.",
+    "✓ Shadowing is the gold standard. Observing real behaviour without interference reveals needs people can't articulate themselves.",
+    "Staff perspective is filtered and secondhand. Always go directly to the people experiencing the problem.",
+    "Complaint data skews toward the vocal minority. Most struggling users never write in — their experience is invisible."
+  ]},
+  define: { c:1, msgs:[
+    "This is a solution-focused statement. 'Better maps' skips understanding who is affected, why, and what they actually need.",
+    "✓ This POV names the user (stressed first-time visitor), the real need (confident navigation), and the root cause (medical jargon). That specificity drives great solutions.",
+    "Too narrow — it addresses one segment and jumps to a feature (large text) instead of the underlying emotional and informational need."
+  ]},
+  ideate: { c:1, msgs:[
+    "Evaluating ideas as you generate them kills creative momentum and discourages bold unconventional thinking. Separate diverge from converge.",
+    "✓ Deferring judgment keeps energy high. 'How Might We' reframes constraints as opportunities. Building on ideas multiplies creative output exponentially.",
+    "Centralising evaluation in one person is the fastest way to lose psychological safety and miss breakthrough ideas from unexpected voices."
+  ]},
+  prototype: { c:1, msgs:[
+    "High-fidelity prototypes often backfire — users comment on polish instead of the concept, and they take too long to build.",
+    "✓ Fail fast, fail cheap. Low-fidelity prototypes test your most critical assumptions in hours. Every test round is worth more than perfecting the build.",
+    "Prototype fidelity doesn't determine developer handoff quality — that's a separate concern unrelated to the learning goal of prototyping."
+  ]},
+  test: { c:1, msgs:[
+    "2/3 isn't the threshold — the insights from failure are worth more than the successes. Patient 2 and 3 revealed something fundamental.",
+    "✓ Patient 3 showed that landmarks beat floor plans for wayfinding. That's a core insight worth pivoting on. Test the new direction before investing further.",
+    "Fixing the font size is a band-aid. You've learned something deeper — color-coding may be structurally wrong, not just poorly executed.",
+    "Going all the way back is rarely necessary when you have strong directional signal. Use what you've learned before starting over."
+  ]}
+};
+
+const BADGES_DEF = [
+  { name:'🔍 Deep Observer',     chk:()=> G.answers.empathize===1 },
+  { name:'📝 Human Storyteller',  chk:()=> G.answers.define===1 },
+  { name:'💡 Ideation Champion',  chk:()=> G.answers.ideate===1 && G.ideas.length>=4 },
+  { name:'🔨 Rapid Builder',      chk:()=> G.answers.prototype===1 },
+  { name:'🔄 Iteration Master',   chk:()=> G.answers.test===1 },
+  { name:'⭐ DT Expert',          chk:()=> G.correct===5 },
+];
+
+const LESSONS_DEF = [
+  ['empathize','Empathize','Observation reveals hidden needs. Always go where users are and watch without interfering.'],
+  ['define',   'Define',   'A POV anchors your whole design process. Frame the human, the need, and the insight.'],
+  ['ideate',   'Ideate',   'Defer judgment. Volume of ideas predicts quality of breakthrough.'],
+  ['prototype','Prototype',"Low fidelity = faster learning. Don't polish until you've validated the concept."],
+  ['test',     'Test',     "Silence is a superpower in testing. Watch users struggle — that struggle is your data."],
+];
+
+// ─── PAGE NAV ───
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  window.scrollTo(0,0);
+  syncScores();
+}
+function goHome() { showPage('home'); syncHome(); }
+function openMod(m) {
+  if(document.getElementById('card-'+m).classList.contains('locked-card')) return;
+  showPage(m);
+}
+
+// ─── ANSWER ───
+function answer(phase, idx, btn) {
+  if(G.answers[phase] !== undefined) return;
+  const btns = document.querySelectorAll('#opts-'+phase+' .opt');
+  btns.forEach(b => b.disabled = true);
+  const d = ANS[phase];
+  const ok = idx === d.c;
+  G.answers[phase] = idx;
+  btn.classList.add(ok ? 'c-right' : 'c-wrong');
+  if(!ok) btns[d.c].classList.add('c-right');
+  if(ok) { G.score += 20 + Math.min(G.streak*5,30); G.streak++; G.correct++; }
+  else    { G.score = Math.max(0, G.score-5); G.streak=0; }
+  const fb = document.getElementById('fb-'+phase);
+  document.getElementById('fv-'+phase).textContent = ok ? '✓ CORRECT' : '✗ NOT QUITE';
+  document.getElementById('fv-'+phase).className = 'fb-v ' + (ok?'ok':'no');
+  document.getElementById('fm-'+phase).textContent = d.msgs[idx];
+  fb.classList.add('show');
+  document.getElementById('next-'+phase).style.display = 'inline-block';
+  syncScores();
+}
+
+// ─── COMPLETE ───
+function complete(cur, nxt) {
+  if(!G.done.includes(cur)) G.done.push(cur);
+  // mark cur done
+  const cc = document.getElementById('card-'+cur);
+  cc.classList.add('done-card'); cc.classList.remove('locked-card');
+  const ct = document.getElementById('tag-'+cur);
+  ct.textContent = 'DONE'; ct.className = 'mc-badge badge-done';
+  // unlock next
+  const nc = document.getElementById('card-'+nxt);
+  if(nc) {
+    nc.classList.remove('locked-card');
+    const nt = document.getElementById('tag-'+nxt);
+    nt.textContent = 'START'; nt.className = 'mc-badge badge-new';
+  }
+  if(nxt==='results') buildResults();
+  showPage(nxt);
+  syncHome();
+}
+
+// ─── IDEATE ───
+function addIdea() {
+  const inp = document.getElementById('idea-inp');
+  const v = inp.value.trim(); if(!v) return;
+  G.ideas.push(v); inp.value = ''; renderIdeas();
+  if(G.ideas.length>=4) document.getElementById('ideate-q').style.display='block';
+}
+function removeIdea(i) { G.ideas.splice(i,1); renderIdeas(); if(G.ideas.length<4) document.getElementById('ideate-q').style.display='none'; }
+function renderIdeas() {
+  const board = document.getElementById('idea-board');
+  board.innerHTML = '';
+  if(!G.ideas.length) { board.innerHTML='<div class="hint-empty">Your ideas will appear here as sticky notes…</div>'; return; }
+  G.ideas.forEach((idea,i) => {
+    const n = document.createElement('div');
+    n.className = 'sticky-note';
+    n.innerHTML = `${idea}<span class="x" onclick="removeIdea(${i})">×</span>`;
+    board.appendChild(n);
+  });
+}
+
+// ─── PROTOTYPE ───
+function pickTool(card, name) {
+  document.querySelectorAll('.tc').forEach(c=>c.classList.remove('picked'));
+  card.classList.add('picked'); G.tool = name;
+  document.getElementById('proto-q').style.display='block';
+}
+
+// ─── RESULTS ───
+function buildResults() {
+  document.getElementById('r-pts').textContent = G.score;
+  document.getElementById('r-cor').textContent = G.correct+'/5';
+  document.getElementById('r-grd').textContent = ['F','D','C','B','A','A+'][G.correct];
+  const br = document.getElementById('r-badges'); br.innerHTML='';
+  let n=0;
+  BADGES_DEF.forEach(b => { if(b.chk()) { n++; const e=document.createElement('div'); e.className='bdg'; e.textContent=b.name; br.appendChild(e); }});
+  if(!n) br.innerHTML='<p style="font-size:13px;color:#aaa">No badges this time — try again!</p>';
+  const lr = document.getElementById('r-lessons'); lr.innerHTML='';
+  LESSONS_DEF.forEach(([k,lbl,txt]) => {
+    const ok = G.answers[k]===ANS[k].c;
+    const e = document.createElement('div'); e.className='lesson';
+    e.innerHTML=`<strong>${lbl}: </strong><em>${txt} ${ok?'✓':'— Review this phase.'}</em>`;
+    lr.appendChild(e);
+  });
+}
+
+// ─── SYNC SCORES ───
+function syncScores() {
+  ['em','de','id','pr','te'].forEach(k => { const el=document.getElementById('s-'+k); if(el) el.textContent=G.score; });
+  syncHome();
+}
+function syncHome() {
+  document.getElementById('ps-pts').textContent=G.score;
+  document.getElementById('ps-cor').textContent=G.correct+'/5';
+  document.getElementById('ps-str').textContent=G.streak;
+  document.getElementById('ps-don').textContent=G.done.length+'/5';
+  document.getElementById('s-home').textContent=G.score;
+}
+
+// ─── RESTART ───
+function restart() {
+  G={score:0,streak:0,correct:0,done:[],answers:{},ideas:[],tool:null};
+  document.querySelectorAll('.opt').forEach(b=>{b.className='opt';b.disabled=false;});
+  document.querySelectorAll('.fb').forEach(f=>f.classList.remove('show'));
+  document.querySelectorAll('[id^="next-"]').forEach(b=>b.style.display='none');
+  ['empathize','define','ideate','prototype','test','results'].forEach((m,i)=>{
+    const c=document.getElementById('card-'+m), t=document.getElementById('tag-'+m);
+    c.classList.remove('done-card');
+    if(i===0){ c.classList.remove('locked-card'); t.textContent='START'; t.className='mc-badge badge-new'; }
+    else { c.classList.add('locked-card'); t.textContent='LOCKED'; t.className='mc-badge badge-lock'; }
+  });
+  // Reset learn/challenge sections
+  ['empathize','define','ideate','prototype','test'].forEach(p => {
+    const li = document.getElementById('learn-'+p);
+    const ci = document.getElementById('challenge-'+p);
+    if(li) li.classList.add('active');
+    if(ci) ci.classList.remove('active');
+  });
+  G.ideas=[]; renderIdeas();
+  document.getElementById('ideate-q').style.display='none';
+  document.getElementById('idea-inp').value='';
+  document.getElementById('proto-q').style.display='none';
+  document.querySelectorAll('.tc').forEach(c=>c.classList.remove('picked'));
+  document.querySelectorAll('.ins-tag').forEach(t=>t.classList.remove('off'));
+  document.getElementById('pov').value='';
+  document.getElementById('cheat').style.display='none';
+  syncHome(); showPage('home');
+}
+
+syncHome();
+</script>
+</body>
+</html>
